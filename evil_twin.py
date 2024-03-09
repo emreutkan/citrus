@@ -105,7 +105,7 @@ def dnsmasq(interface, internet_facing_interface=None, captive_portal=False):
         f'dhcp-option=6,192.168.10.1',
         f'listen-address=127.0.0.1',
         f'server=8.8.8.8',
-        f'address=/#/192.168.10.1'
+        # f'address=/#/192.168.10.1' this line here made the issue with having no internet on rogueAP
     ]
     if captive_portal:
         print(magenta('running dnsmasq config with captive_portal'))
@@ -300,7 +300,7 @@ def close(interface, internet_facing_interface, monitor_interface=None, called_f
     run_command_print_output(f'killall dhclient')
     run_command_print_output(f'systemctl restart NetworkManager')
     run_command_print_output(f'systemctl stop apache2')
-    if captive_portal == 123:
+    if captive_portal:
         # remove apache() rules
         # Delete the PREROUTING rule for port 80:
         run_command_print_output(
