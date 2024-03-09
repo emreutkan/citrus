@@ -18,3 +18,31 @@ def green(string):
     param string
     """
     return f'\033[92m{string}\033[0m'
+
+
+def purple(string):
+    return f'\033[95m{string}\033[0m'
+
+
+def yellow(string):
+    return f'\033[33m{string}\033[0m'
+
+
+def blue(string):
+    return f'\033[34m{string}\033[0m'
+
+
+def magenta(string):
+    return f'\033[35m{string}\033[0m'
+
+
+def cyan(string):
+    return f'\033[36m{string}\033[0m'
+
+
+def white(string):
+    return f'\033[37m{string}\033[0m'
+
+
+def purple(string):
+    return f'\033[95m{string}\033[0m'
