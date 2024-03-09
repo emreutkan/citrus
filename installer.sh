@@ -86,16 +86,26 @@ then
 fi
 
 chmod +x main.py
-
-# Create a citrus command
-echo -e "${GREEN}Creating a citrus command...${NC}"
 echo "#!/bin/bash
 # Check if running as root
 if [ \"\$EUID\" -ne 0 ]; then
-  echo 'run as root (sudo citrus)'
+  echo 'Run as root (sudo citrus)'
   exit
 fi
-cd /path/to/your/project
+
+echo 'Searching for the citrus project directory...'
+
+
+PROJECT_PATH=\$(find / -type d -name 'citrus' 2>/dev/null | head -n 1)
+
+if [ -z \"\$PROJECT_PATH\" ]; then
+  echo 'Citrus project path not found. Make sure the citrus directory exists and you have the right permissions to access it.'
+  exit
+else
+  echo \"Found citrus project at \$PROJECT_PATH\"
+fi
+
+cd \"\$PROJECT_PATH\"
 source venv/bin/activate
 python main.py" > citrus
 
