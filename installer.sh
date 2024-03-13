@@ -3,12 +3,18 @@
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
+REPO_URL="https://github.com/emreutkan/citrus.git"
+INSTALL_DIR="$HOME"
 
-# Check if running as root
-if [ "$EUID" -ne 0 ]
-  then echo -e "${RED}run as root (sudo ./installer.sh)${NC}"
-  exit
+if [ "$EUID" -ne 0 ]; then
+    echo -e "${RED}Please run as root (sudo ./installer.sh)${NC}"
+    exit
 fi
+
+cd $INSTALL_DIR
+echo -e "${GREEN}Cloning the citrus repository to the root directory.${NC}"
+git clone "$REPO_URL"
+cd citrus || exit
 
 if command -v pacman &> /dev/null; then
     PACKAGE_MANAGER_INSTALL="sudo pacman -S --noconfirm"
@@ -85,31 +91,15 @@ then
     $PACKAGE_MANAGER_INSTALL python3-pip
 fi
 
-chmod +x main.py
+echo -e "${GREEN}Creating a citrus command...${NC}"
 echo "#!/bin/bash
-# Check if running as root
 if [ \"\$EUID\" -ne 0 ]; then
-  echo 'Run as root (sudo citrus)'
-  exit
+    echo 'Please run as root (sudo citrus)'
+    exit
 fi
+cd $INSTALL_DIR/citrus
+python citrus.py" > citrus
 
-echo 'Searching for the citrus project directory...'
-
-
-PROJECT_PATH=\$(find / -type d -name 'citrus' 2>/dev/null | head -n 1)
-
-if [ -z \"\$PROJECT_PATH\" ]; then
-  echo 'Citrus project path not found. Make sure the citrus directory exists and you have the right permissions to access it.'
-  exit
-else
-  echo \"Found citrus project at \$PROJECT_PATH\"
-fi
-
-cd \"\$PROJECT_PATH\"
-source venv/bin/activate
-python main.py" > citrus
-
-# Make the citrus command executable and move it to the user's bin directory
 chmod +x citrus
 sudo mv citrus /usr/local/bin/citrus
 

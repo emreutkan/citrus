@@ -546,44 +546,53 @@ mitm = ['mitm', mitm_options]
 
 section = main
 prev_section = main
-
+art = [
+'''
+_________ .__  __                       
+\_   ___ \|__|/  |________ __ __  ______
+/    \  \/|  \   __\_  __ \  |  \/  ___/
+\     \___|  ||  |  |  | \/  |  /\___ \ 
+ \______  /__||__|  |__|  |____//____  >
+        \/                           \/ 
+'''
+]
 if __name__ == "__main__":
     while 1:
         clear()
-
+        print(red(art[0]))
         main_options = [
             f'{blue("-------------------------------------------------------")}',
             f'{green("1)")} Select Monitor Interface',
             f'{green("2)")} Select Internet Facing Interface',
             f'{blue("-------------------------------------------------------")}',
-            f'Monitor Interface           : {cyan(selected_interface)} at {cyan(physical_number_of_interface)}',
-            f'Internet Facing Interface   : {cyan(internet_facing_interface)}',
-            f'Monitor Interface MAC       : {cyan(selected_interface_mac_address)}',
+            f'{yellow("Monitor Interface")}           : {cyan(selected_interface)} at {cyan(physical_number_of_interface)}',
+            f'{yellow("Internet Facing Interface ")}  : {cyan(internet_facing_interface)}',
+            f'{yellow("Monitor Interface MAC")}       : {cyan(selected_interface_mac_address)}',
             f'{blue("-------------------------------------------------------")}',
-            f'{green("A)")} MITM ATTACKS',
+            f'{green("A)")} Access MITM Options',
             f'{blue("-------------------------------------------------------")}',
         ]
         mitm_options = [
             f'{blue("-------------------------------------------------------")}',
-            f'{green("I")}      Interface Selection',
+            f'{green("I")}   {cyan("Interface Selection")}',
             f'{blue("-------------------------------------------------------")}',
-            f'{green("T)")}     Select a Target',
+            f'{green("T)")}  {cyan("Select a Target")}',
             f'{blue("-------------------------------------------------------")}',
-            f'{green("E)")}     Evil Twin',
-            f'{green("ED)")}    Evil Twin w/ Deauthentication attack',
-            f'{green("EC)")}    Evil Twin w/ Captive Portal',
+            f'{green("E)")}  {cyan("Evil Twin")}',
+            f'{green("ED)")} {cyan("Evil Twin")} Deauthentication',
+            f'{green("EC)")} {cyan("Evil Twin")} Captive Portal',
             f'{blue("-------------------------------------------------------")}',
-            f'Monitor Interface           : {cyan(selected_interface)}',
-            f'Internet Facing Interface   : {cyan(internet_facing_interface)}',
+            f'{yellow("Monitor Interface")}           : {cyan(selected_interface)} at {cyan(physical_number_of_interface)}',
+            f'{yellow("Internet Facing Interface ")}  : {cyan(internet_facing_interface)}',
             f'{blue("-------------------------------------------------------")}',
-            f'Target SSID                 : {cyan(target_ap)}',
-            f'Target MAC                  : {cyan(target_bssid)}',
-            f'Target CHANNEL              : {cyan(target_channel)}',
+            f'{yellow("Target SSID")}                 : {cyan(target_ap)}',
+            f'{yellow("Target BSSID")}                : {cyan(target_bssid)}',
+            f'{yellow("Target CHANNEL")}              : {cyan(target_channel)}',
             f'{blue("-------------------------------------------------------")}',
 
         ]
         section[1]()
-        match input('\nmitm > ').upper():
+        match input(f'\n{magenta("citrus >")} ').upper():
             case '1':
                 if section[0] == 'main':
                     change_interface()
