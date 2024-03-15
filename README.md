@@ -1,8 +1,4 @@
 # citrus
+### ![Installation](https://github.com/emreutkan/citrus/releases/tag/v1.0.0)
 
-## TODO
-- Develop custom captive portal landing pages.
-  - fake router firmware update,
-- Save user inputs (passwords) in the captive portal to a text file, and while saving:
-  - Either check the passwords against a capture file (if the user has one), then immediately end the attack if a password matches. If not a match, redirect to an HTML page that displays "Wrong Password enter password again".
-  - Or simply close immediately if no capture file is available.
+![citrus](https://github.com/emreutkan/citrus/assets/127414322/d3dfd626-c568-46f3-a77f-4da0433c1f86)
