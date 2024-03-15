@@ -325,22 +325,12 @@ def create_file_in_tmp(file, content):
 
 def apache2():
     print(magenta('running apache2'))
-
     html_location = './captive_portal_html/{}'
-    html_destination = '/var/www/html/{}'
-    config_destination = '/etc/apache2/sites-enabled/{}'
-
-    # run_command_print_output(f"cp -r {html_location.format('temp')} {html_destination.format('temp')}")
-    # run_command_print_output(f"cp -r {html_location.format('android')} {html_destination.format('android')}")
-    # run_command(f"cp {config_location.format('android.config')} {config_destination.format('android.config')}")
-
-    # run_command(f"cp {config_location.format('000-default.conf')} /etc/apache2/sites-available/temp.conf")
+    html_destination = '/var/www/html/'
+    config_destination = '/etc/apache2/sites-available/'
+    run_command_print_output(f'cp -r {html_location.format("temp")} {html_destination}')
     run_command_print_output('systemctl start apache2')
-    run_command_print_output(
-        f"cp {html_location.format('000-default.conf')} /etc/apache2/sites-available/000-default.conf")
-    # create_html_page()
-    # run_command_print_output('cp ./html.index /var/www/html/temp/index.html')
-    # run_command_print_output('cp ./password.php /var/www/html/temp/password.php')
+    run_command_print_output(f"cp {html_location.format('000-default.conf')} {config_destination}")
 
     run_command_print_output('systemctl restart apache2')
 
