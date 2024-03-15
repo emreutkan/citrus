@@ -2,10 +2,64 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thank You</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #e2e6ea;
+            transition: background-color 0.5s ease;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            transition: transform 0.5s ease, opacity 0.5s ease;
+            opacity: 0; /* Start with container invisible */
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            font-size: 18px;
+            color: #666;
+        }
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background-color 0.25s ease;
+        }
+        a:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 <body>
-    <h2>Thank you for logging in!</h2>
-    <p>You now have access to the internet.</p>
+    <div class="container">
+        <h1>Thank You!</h1>
+        <p>Your information has been successfully submitted.</p>
+        <a href="index.html">Go Back</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            // Fade in the container
+            const container = document.querySelector('.container');
+            setTimeout(() => {
+                container.style.opacity = 1; // Make container visible
+                container.style.transform = 'scale(1.1)'; // Apply scale effect
+            }, 100); // Delay to ensure transition effect is noticeable
+        });
+    </script>
 </body>
 </html>
