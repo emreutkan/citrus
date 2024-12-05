@@ -1,4 +1,4 @@
-# citrus
+# Citrus
 
 An Automated Evil Twin Framework designed to impersonate legitimate wireless networks with `dnsmasq` and `hostapd`. Citrus sets up a foundation for executing Man-in-the-Middle (MITM) attacks. It also has an option to deploy a captive portal using `apache2`, complete with a fake credentials page for phishing attacks. 
 
